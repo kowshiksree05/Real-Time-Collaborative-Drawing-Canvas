@@ -20,6 +20,10 @@ npm install
 ```bash
 npm start
 ```
+## 🚀 Live Demo
+[https://real-time-collaborative-drawing-canvas-4zdh.onrender.com](https://real-time-collaborative-drawing-canvas-4zdh.onrender.com)
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-2ea44f?style=for-the-badge)](https://real-time-collaborative-drawing-canvas-4zdh.onrender.com)
 
 This will:
 1. Build the TypeScript code (both server and client)
