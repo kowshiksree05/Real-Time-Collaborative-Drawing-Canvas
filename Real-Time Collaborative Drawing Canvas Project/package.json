@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
-   "start:server": "node dist/server.js",
+    "start:server": "node dist/server/server.js",
     "build:client": "tsc -p tsconfig.client.json",
     "start": "npm run build && node dist/server/server.js",
     "dev": "npm run build:client && ts-node-dev --respawn --transpile-only server/server.ts",
@@ -33,6 +33,7 @@
     "typescript": "^5.1.6"
   }
 }
+
 
 
 
