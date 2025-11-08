@@ -19,6 +19,7 @@ export class CanvasManager {
   // Undo/Redo stacks
   private undoStack: string[] = [];
   private redoStack: DrawingStroke[] = [];
+  private pendingStrokeId: string | null = null; // Track stroke ID waiting for server response
 
   // Callbacks
   private onStrokeStart?: (stroke: DrawingStroke) => void;
@@ -166,8 +167,9 @@ export class CanvasManager {
         this.onStrokeEnd(this.currentStroke.id);
       }
 
-      // Add to undo stack
+      // Add to undo stack (will be updated when server responds with correct ID)
       this.undoStack.push(this.currentStroke.id);
+      this.pendingStrokeId = this.currentStroke.id; // Track for ID update
       this.redoStack = []; // Clear redo stack
 
       this.currentStroke = null;
@@ -215,7 +217,60 @@ export class CanvasManager {
 
   // External drawing methods (for remote strokes)
   drawRemoteStrokeStart(stroke: DrawingStroke): void {
-    if (stroke.userId === this.currentUserId) return; // Don't redraw own strokes
+    // If this is our own stroke, update the local stroke ID to match server's ID
+    if (stroke.userId === this.currentUserId) {
+      let localStroke: DrawingStroke | null = null;
+      let oldId: string | null = null;
+      
+      if (this.currentStroke) {
+        // Stroke is still being drawn
+        localStroke = this.currentStroke;
+        oldId = localStroke.id;
+        localStroke.id = stroke.id;
+        this.pendingStrokeId = stroke.id; // Track for undo stack update
+      } else if (this.pendingStrokeId) {
+        // Try to find stroke by pending ID first (most recent)
+        const pendingStroke = this.strokes.get(this.pendingStrokeId);
+        if (pendingStroke && pendingStroke.userId === this.currentUserId) {
+          localStroke = pendingStroke;
+          oldId = this.pendingStrokeId;
+          localStroke.id = stroke.id;
+        }
+      }
+      
+      // If not found, try to find by matching characteristics
+      if (!localStroke) {
+        for (const [id, s] of this.strokes.entries()) {
+          if (s.userId === this.currentUserId && 
+              Math.abs(s.timestamp - stroke.timestamp) < 2000 && 
+              s.points.length > 0 &&
+              stroke.points.length > 0 &&
+              s.points[0].x === stroke.points[0].x &&
+              s.points[0].y === stroke.points[0].y) {
+            localStroke = s;
+            oldId = id;
+            localStroke.id = stroke.id;
+            break;
+          }
+        }
+      }
+      
+      if (localStroke && oldId) {
+        // Update strokes map
+        this.strokes.delete(oldId);
+        this.strokes.set(stroke.id, localStroke);
+        
+        // Update undo stack if the old ID is there
+        const undoIndex = this.undoStack.indexOf(oldId);
+        if (undoIndex !== -1) {
+          this.undoStack[undoIndex] = stroke.id;
+        }
+        
+        this.pendingStrokeId = stroke.id;
+      }
+      
+      return; // Don't redraw own strokes
+    }
     
     this.strokes.set(stroke.id, stroke);
     if (stroke.points.length > 0) {
@@ -263,7 +318,20 @@ export class CanvasManager {
   // Undo/Redo
   undo(strokeId: string): void {
     const stroke = this.strokes.get(strokeId);
-    if (!stroke) return;
+    if (!stroke) {
+      // Stroke not found - might have been already undone or doesn't exist
+      // Remove from undo stack if it's there
+      const index = this.undoStack.indexOf(strokeId);
+      if (index !== -1) {
+        this.undoStack.splice(index, 1);
+      }
+      return;
+    }
+
+    // Only undo strokes that belong to the current user
+    if (stroke.userId !== this.currentUserId) {
+      return;
+    }
 
     // Remove stroke from map
     this.strokes.delete(strokeId);
@@ -273,6 +341,10 @@ export class CanvasManager {
     if (index !== -1) {
       this.undoStack.splice(index, 1);
       this.redoStack.push(stroke);
+    } else {
+      // Stroke not in undo stack but server says to undo it
+      // Add to redo stack anyway (might be from server sync)
+      this.redoStack.push(stroke);
     }
 
     // Redraw canvas without the removed stroke
@@ -280,6 +352,20 @@ export class CanvasManager {
   }
 
   redo(stroke: DrawingStroke): void {
+    // Only redo strokes that belong to the current user
+    if (stroke.userId !== this.currentUserId) {
+      return;
+    }
+
+    // Check if stroke already exists (might have been redone already)
+    if (this.strokes.has(stroke.id)) {
+      // Stroke already exists, just ensure it's in undo stack
+      if (!this.undoStack.includes(stroke.id)) {
+        this.undoStack.push(stroke.id);
+      }
+      return;
+    }
+
     // Restore the stroke
     this.strokes.set(stroke.id, stroke);
     
@@ -287,6 +373,9 @@ export class CanvasManager {
     const redoIndex = this.redoStack.findIndex(s => s.id === stroke.id);
     if (redoIndex !== -1) {
       this.redoStack.splice(redoIndex, 1);
+      this.undoStack.push(stroke.id);
+    } else {
+      // If not in redo stack, add it anyway (might be from server sync)
       this.undoStack.push(stroke.id);
     }
 
@@ -338,9 +427,21 @@ export class CanvasManager {
       this.redrawStroke(stroke);
     });
 
-    // Rebuild undo stack
-    this.undoStack = strokes.map(s => s.id);
-    this.redoStack = [];
+    // Rebuild undo stack - only include strokes by the current user
+    // Keep existing redo stack items that are still valid
+    this.undoStack = strokes
+      .filter(s => s.userId === this.currentUserId)
+      .map(s => s.id);
+    
+    // Filter redo stack to only include strokes that are still valid (not in current strokes)
+    this.redoStack = this.redoStack.filter(redoStroke => {
+      // Keep if it's not in the current strokes and belongs to current user
+      return !strokes.some(s => s.id === redoStroke.id) && 
+             redoStroke.userId === this.currentUserId;
+    });
+    
+    // Clear pending stroke ID after sync
+    this.pendingStrokeId = null;
   }
 
   // Clear canvas
@@ -349,6 +450,7 @@ export class CanvasManager {
     this.strokes.clear();
     this.undoStack = [];
     this.redoStack = [];
+    this.pendingStrokeId = null;
   }
 
   // Tool setters
