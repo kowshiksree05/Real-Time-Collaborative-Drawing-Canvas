@@ -1,11 +1,14 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
+ "compilerOptions": {
+    "rootDir": "./server",
+    "outDir": "./dist/server",
     "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": "./"
+    "target": "ES2019",
+    "esModuleInterop": true
   },
   "include": ["server/**/*.ts"],
   "exclude": ["node_modules", "dist", "client"]
 }
+
 
