@@ -51,7 +51,6 @@ export class WebSocketManager {
       return;
     }
 
-    serverUrl = "https://real-time-collaborative-drawing-canvas-4zdh.onrender.com";
     console.log('Connecting to server at:', serverUrl);
     const socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
@@ -288,5 +287,6 @@ export class WebSocketManager {
     return this.roomId;
   }
 }
+
 
 
