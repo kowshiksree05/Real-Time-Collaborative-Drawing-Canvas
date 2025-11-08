@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Drawing Canvas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Collaborative Drawing Canvas</h1>
+            <div class="user-info">
+                <span id="userName">User</span>
+                <span id="userCount" class="user-count">0 users online</span>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="tool-group">
+                <label>Tool:</label>
+                <button id="brushTool" class="tool-btn active">🖌️ Brush</button>
+                <button id="eraserTool" class="tool-btn">🧹 Eraser</button>
+            </div>
+
+            <div class="tool-group">
+                <label>Color:</label>
+                <input type="color" id="colorPicker" value="#000000">
+                <div class="color-presets">
+                    <button class="color-btn" data-color="#000000" style="background: #000000"></button>
+                    <button class="color-btn" data-color="#FF0000" style="background: #FF0000"></button>
+                    <button class="color-btn" data-color="#00FF00" style="background: #00FF00"></button>
+                    <button class="color-btn" data-color="#0000FF" style="background: #0000FF"></button>
+                    <button class="color-btn" data-color="#FFFF00" style="background: #FFFF00"></button>
+                    <button class="color-btn" data-color="#FF00FF" style="background: #FF00FF"></button>
+                    <button class="color-btn" data-color="#00FFFF" style="background: #00FFFF"></button>
+                    <button class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF"></button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label>Size:</label>
+                <input type="range" id="lineWidth" min="1" max="50" value="5">
+                <span id="lineWidthValue">5px</span>
+            </div>
+
+            <div class="tool-group">
+                <button id="undoBtn" class="action-btn">↶ Undo</button>
+                <button id="redoBtn" class="action-btn">↷ Redo</button>
+                <button id="clearBtn" class="action-btn danger">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas>
+            <canvas id="cursorCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h3>Online Users</h3>
+            <div id="usersList" class="users-list"></div>
+        </div>
+
+        <div class="status-bar">
+            <span id="connectionStatus" class="status connected">● Connected</span>
+            <span id="roomId" class="room-id">Room: default</span>
+        </div>
+    </div>
+
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <h2>Join Drawing Room</h2>
+            <input type="text" id="userNameInput" placeholder="Enter your name" maxlength="20">
+            <input type="text" id="roomIdInput" placeholder="Room ID (default: 'default')" value="default">
+            <button id="joinBtn" class="join-btn">Join Room</button>
+        </div>
+    </div>
+
+    <!-- Load Socket.io from CDN (more reliable than server-served version) -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
+

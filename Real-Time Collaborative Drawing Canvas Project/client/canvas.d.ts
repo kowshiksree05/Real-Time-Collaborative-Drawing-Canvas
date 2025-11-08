@@ -1,0 +1,58 @@
+import { Point, DrawingStroke, User } from './types.js';
+export declare class CanvasManager {
+    private drawingCanvas;
+    private cursorCanvas;
+    private drawingCtx;
+    private cursorCtx;
+    private isDrawing;
+    private currentStroke;
+    private strokes;
+    private userCursors;
+    private currentTool;
+    private currentColor;
+    private currentLineWidth;
+    private currentUserId;
+    private undoStack;
+    private redoStack;
+    private onStrokeStart?;
+    private onStrokeMove?;
+    private onStrokeEnd?;
+    private onUndo?;
+    private onRedo?;
+    constructor(drawingCanvas: HTMLCanvasElement, cursorCanvas: HTMLCanvasElement);
+    setUserId(userId: string): void;
+    setCallbacks(callbacks: {
+        onStrokeStart?: (stroke: DrawingStroke) => void;
+        onStrokeMove?: (strokeId: string, point: Point) => void;
+        onStrokeEnd?: (strokeId: string) => void;
+        onUndo?: () => void;
+        onRedo?: () => void;
+    }): void;
+    private setupCanvas;
+    private setupEventListeners;
+    private getPointFromEvent;
+    private handleStart;
+    private handleMove;
+    private handleEnd;
+    private handleTouchStart;
+    private handleTouchMove;
+    private handleTouchEnd;
+    private drawPoint;
+    drawRemoteStrokeStart(stroke: DrawingStroke): void;
+    drawRemoteStrokeMove(strokeId: string, point: Point): void;
+    drawRemoteStrokeEnd(stroke: DrawingStroke): void;
+    private drawRemotePoint;
+    undo(strokeId: string): void;
+    redo(stroke: DrawingStroke): void;
+    private redrawCanvas;
+    private redrawStroke;
+    syncState(strokes: DrawingStroke[]): void;
+    clear(): void;
+    setTool(tool: 'brush' | 'eraser'): void;
+    setColor(color: string): void;
+    setLineWidth(width: number): void;
+    updateUserCursor(userId: string, user: User, point: Point): void;
+    removeUserCursor(userId: string): void;
+    private drawCursors;
+}
+//# sourceMappingURL=canvas.d.ts.map
