@@ -150,8 +150,3 @@ collaborative-canvas/
 - **Dual Canvas Approach**: Separate canvas for cursors to avoid redrawing main canvas
 - **Operation-based Undo**: Each stroke is a single operation, making undo/redo simpler
 - **Event-driven Architecture**: Drawing events streamed in real-time for smooth collaboration
-
-## 📝 License
-
-MIT
-
